@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Concierge AI</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .chat-container { background: white; width: 100%; max-width: 500px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 80vh; }
+        .header { background: #007bff; color: white; padding: 15px; text-align: center; border-radius: 8px 8px 0 0; }
+        .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; line-height: 1.4; }
+        .user-msg { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai-msg { background: #e9ecef; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">
+        <h3>Grand Seaside Concierge</h3>
+    </div>
+    <div class="messages" id="messages">
+        <div class="message ai-msg">Hello! I'm your virtual concierge. How can I assist you today?</div>
+    </div>
+    <form class="input-area" id="chat-form">
+        <input type="text" id="user-input" placeholder="Type your question here..." required autocomplete="off">
+        <button type="submit">Send</button>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('user-input');
+    const messages = document.getElementById('messages');
+
+    function appendMessage(text, isUser) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message');
+        msgDiv.classList.add(isUser ? 'user-msg' : 'ai-msg');
+        msgDiv.textContent = text;
+        messages.appendChild(msgDiv);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = input.value.trim();
+        if (!query) return;
+
+        appendMessage(query, true);
+        input.value = '';
+
+        // Add a temporary loading message
+        const loadingDiv = document.createElement('div');
+        loadingDiv.classList.add('message', 'ai-msg');
+        loadingDiv.textContent = 'Thinking...';
+        messages.appendChild(loadingDiv);
+        messages.scrollTop = messages.scrollHeight;
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            const data = await res.json();
+
+            // Remove loading message
+            messages.removeChild(loadingDiv);
+
+            appendMessage(data.answer, false);
+        } catch (error) {
+            messages.removeChild(loadingDiv);
+            appendMessage('Sorry, I encountered an error connecting to the server.', false);
+            console.error(error);
+        }
+    });
+</script>
+
+</body>
+</html>
